@@ -52,8 +52,8 @@ A compact, menu-driven tester that reads live position, pulls device identity, a
 
 ## Quick Start
 
-1. Clone the repo into your Arduino sketches folder.
-2. Open `EncoderTester.ino`.
+1. Clone the repo into your Arduino sketches folder (folder name must be `ESP32-C3_Encoder_Tester`).
+2. Open `ESP32-C3_Encoder_Tester.ino`.
 3. Select the **ESP32-C3** board and the correct port.
 4. Enable **USB CDC On Boot** if you need Serial output.
 5. Install the **U8g2** library (provides U8x8).
@@ -66,14 +66,14 @@ Power the encoder(s) and the bus. The splash appears, then the live position scr
 ## Project Structure
 
 ```
-EncoderTester.ino   → main setup / loop
-config.h            → pins, timing, constants
-canbus.h / .cpp     → TWAI init, send/receive, SDO helpers
-encoder.h / .cpp    → node tracking, configuration, info reads
-display.h / .cpp    → OLED (splash, main, menu, info)
-buttons.h / .cpp    → 5-way navigation (debounced)
-menu.h / .cpp       → state machine and menus
-tests.h / .cpp      → diagnostic modes
+ESP32-C3_Encoder_Tester.ino   → main setup / loop
+config.h                      → pins, timing, constants
+canbus.h / .cpp               → TWAI init, send/receive, SDO helpers
+encoder.h / .cpp              → node tracking, configuration, info reads
+display.h / .cpp              → OLED (splash, main, menu, info)
+buttons.h / .cpp              → 5-way navigation (debounced)
+menu.h / .cpp                 → state machine and menus
+tests.h / .cpp                → diagnostic modes
 ```
 
 ---
