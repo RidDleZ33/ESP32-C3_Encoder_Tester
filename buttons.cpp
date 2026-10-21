@@ -9,11 +9,13 @@ void buttonsInit() {
     pinMode(BTN_CENTER_PIN, INPUT_PULLUP);
 }
 
+// Module is mounted rotated 90°. Mapping rotated counter-clockwise so
+// physical left = LEFT, physical right = RIGHT.
 Button buttonsRead() {
-    if (digitalRead(BTN_UP_PIN) == LOW) return BTN_UP;
-    if (digitalRead(BTN_DOWN_PIN) == LOW) return BTN_DOWN;
-    if (digitalRead(BTN_LEFT_PIN) == LOW) return BTN_LEFT;
-    if (digitalRead(BTN_RIGHT_PIN) == LOW) return BTN_RIGHT;
+    if (digitalRead(BTN_UP_PIN) == LOW) return BTN_LEFT;    // was UP → now LEFT
+    if (digitalRead(BTN_DOWN_PIN) == LOW) return BTN_RIGHT; // was DOWN → now RIGHT
+    if (digitalRead(BTN_LEFT_PIN) == LOW) return BTN_DOWN;  // was LEFT → now DOWN
+    if (digitalRead(BTN_RIGHT_PIN) == LOW) return BTN_UP;   // was RIGHT → now UP
     if (digitalRead(BTN_CENTER_PIN) == LOW) return BTN_CENTER;
     return BTN_NONE;
 }
