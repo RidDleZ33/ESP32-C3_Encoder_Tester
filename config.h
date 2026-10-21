@@ -5,12 +5,13 @@
 #define CAN_TX_PIN          GPIO_NUM_4
 #define CAN_RX_PIN          GPIO_NUM_7
 
-// OLED (onboard I2C)
-#define PIN_SDA             5
-#define PIN_SCL             6
+// External 0.96" SSD1306 OLED (I2C)
+// Change these to match your wiring on the Super Mini
+#define PIN_SDA             8
+#define PIN_SCL             9
 
 // 5-way navigation (COM to GND, active low, INPUT_PULLUP)
-// Change these if you wire differently. Avoid 4,5,6,7.
+// Avoid CAN pins (4/7) and OLED pins (8/9)
 #define BTN_UP_PIN          0
 #define BTN_DOWN_PIN        1
 #define BTN_LEFT_PIN        2
@@ -29,3 +30,6 @@ const uint32_t BUTTON_DEBOUNCE_MS = 50;
 
 // ========== Display ==========
 const uint8_t NORMAL_CONTRAST = 180;
+// 128x64 = 16 columns x 8 rows in U8X8
+const uint8_t OLED_COLS = 16;
+const uint8_t OLED_ROWS = 8;
