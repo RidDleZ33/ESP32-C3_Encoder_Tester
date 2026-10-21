@@ -1,17 +1,19 @@
 # AMARC Encoder Tester
 
-**ESP32-C3 OLED diagnostic tool for Baumer BFF/BFG CANopen absolute encoders.**
+**ESP32-C3 Super Mini diagnostic tool for Baumer BFF/BFG CANopen absolute encoders.**
 
-A compact, menu-driven tester that reads live position, pulls device identity, and runs practical diagnostic modes on one or two encoders over a 250 kbps CAN bus.
+A compact, menu-driven tester that reads live position, pulls device identity, and runs practical diagnostic modes on one or two encoders over a 250 kbps CAN bus. Uses an external 0.96" 128x64 SSD1306 OLED.
+
+> **Onboard OLED version:** the original ESP32-C3 OLED board variant is preserved on the [`c3-oled`](https://github.com/RidDleZ33/ESP32-C3_Encoder_Tester/tree/c3-oled) branch.
 
 ---
 
 ## Features
 
 - **Splash screen** — “AMARC Encoder Tester” on boot
-- **Live position display** — node ID and angle for up to two encoders
+- **Live position display** — node ID and angle for up to two encoders (larger layout)
 - **5-way navigation** — up / down / left / right / center (active-low)
-- **Menu system** with inverted selection
+- **Menu system** with inverted selection (up to 7 items visible)
   - **Info** — device type, resolution, error register, name (via SDO)
   - **Config** — swap encoder roles, invert E1 / E2
   - **Tests**
@@ -28,7 +30,8 @@ A compact, menu-driven tester that reads live position, pulls device identity, a
 
 | Component | Notes |
 |-----------|-------|
-| Board | ESP32-C3 OLED (onboard SSD1306, I2C on GPIO 5/6) |
+| Board | ESP32-C3 Super Mini |
+| Display | External 0.96" 128x64 SSD1306 (I2C, yellow+blue or blue) |
 | CAN transceiver | Genuine SN65HVD230 or TJA1051 (3.3 V) |
 | Termination | 120 Ω between CAN_H and CAN_L |
 | Navigation | Common 5-way joystick module (COM → GND) |
@@ -38,15 +41,17 @@ A compact, menu-driven tester that reads live position, pulls device identity, a
 
 | Function | GPIO | Notes |
 |----------|------|-------|
-| CAN TX | 4 | Avoid OLED/I2C pins |
+| CAN TX | 4 | |
 | CAN RX | 7 | |
-| OLED SDA | 5 | Onboard |
-| OLED SCL | 6 | Onboard |
+| OLED SDA | 8 | External SSD1306 |
+| OLED SCL | 9 | External SSD1306 |
 | BTN UP | 0 | INPUT_PULLUP |
 | BTN DOWN | 1 | |
 | BTN LEFT | 2 | |
 | BTN RIGHT | 3 | |
 | BTN CENTER | 10 | Select / enter |
+
+Wire the OLED VCC to 3.3 V and GND to GND. Most 0.96" modules use address 0x3C (default).
 
 ---
 
@@ -54,7 +59,7 @@ A compact, menu-driven tester that reads live position, pulls device identity, a
 
 1. Clone the repo into your Arduino sketches folder (folder name must be `ESP32-C3_Encoder_Tester`).
 2. Open `ESP32-C3_Encoder_Tester.ino`.
-3. Select the **ESP32-C3** board and the correct port.
+3. Select the **ESP32-C3 Dev Module** (or Super Mini) board and the correct port.
 4. Enable **USB CDC On Boot** if you need Serial output.
 5. Install the **U8g2** library (provides U8x8).
 6. Upload.
