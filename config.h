@@ -6,12 +6,13 @@
 #define CAN_RX_PIN          GPIO_NUM_7
 
 // External 0.96" SSD1306 OLED (I2C)
-// Change these to match your wiring on the Super Mini
-#define PIN_SDA             8
-#define PIN_SCL             9
+// NOTE: GPIO 8 is the onboard blue LED on Super Mini — do not use it for I2C
+// or the display will blink in sync with the LED.
+#define PIN_SDA             5
+#define PIN_SCL             6
 
 // 5-way navigation (COM to GND, active low, INPUT_PULLUP)
-// Avoid CAN pins (4/7) and OLED pins (8/9)
+// Avoid CAN pins (4/7), OLED pins (5/6), and the LED pin (8)
 #define BTN_UP_PIN          0
 #define BTN_DOWN_PIN        1
 #define BTN_LEFT_PIN        2
