@@ -15,8 +15,9 @@ void displayInit() {
 
 void displaySplash() {
     u8x8.clearDisplay();
-    u8x8.drawString(0, 2, "  AMARC");
-    u8x8.drawString(0, 4, "Encoder Tester");
+    u8x8.drawString(2, 2, "AMARC");
+    u8x8.drawString(1, 4, "Encoder Tester");
+    u8x8.drawString(3, 6, "v0.2");
     delay(SPLASH_MS);
     u8x8.clearDisplay();
 }
@@ -25,32 +26,38 @@ void displayMain() {
     u8x8.clearDisplay();
     u8x8.drawString(0, 0, "AMARC Tester");
 
-    char buf[20];
+    char buf[18];
     if (enc1.connected) {
-        snprintf(buf, sizeof(buf), "E1 ID:%3d %5.1f", enc1.nodeId, encoderAngle(enc1));
+        snprintf(buf, sizeof(buf), "E1 ID:%3d", enc1.nodeId);
+        u8x8.drawString(0, 2, buf);
+        snprintf(buf, sizeof(buf), "   %6.1f deg", encoderAngle(enc1));
+        u8x8.drawString(0, 3, buf);
     } else {
-        snprintf(buf, sizeof(buf), "E1 OFF");
+        u8x8.drawString(0, 2, "E1 OFF");
     }
-    u8x8.drawString(0, 2, buf);
 
     if (enc2.connected) {
-        snprintf(buf, sizeof(buf), "E2 ID:%3d %5.1f", enc2.nodeId, encoderAngle(enc2));
+        snprintf(buf, sizeof(buf), "E2 ID:%3d", enc2.nodeId);
+        u8x8.drawString(0, 5, buf);
+        snprintf(buf, sizeof(buf), "   %6.1f deg", encoderAngle(enc2));
+        u8x8.drawString(0, 6, buf);
     } else {
-        snprintf(buf, sizeof(buf), "E2 OFF");
+        u8x8.drawString(0, 5, "E2 OFF");
     }
-    u8x8.drawString(0, 4, buf);
 
-    u8x8.drawString(0, 6, "CENTER=Menu");
+    u8x8.drawString(0, 7, "CENTER = Menu");
 }
 
 void displayMenu(const char* title, const char* items[], int count, int selected) {
     u8x8.clearDisplay();
     u8x8.drawString(0, 0, title);
-    for (int i = 0; i < count && i < 6; i++) {
+    for (int i = 0; i < count && i < 7; i++) {
         if (i == selected) {
             u8x8.setInverseFont(1);
         }
-        u8x8.drawString(0, i + 1, items[i]);
+        char line[17];
+        snprintf(line, sizeof(line), "%-16s", items[i]);
+        u8x8.drawString(0, i + 1, line);
         u8x8.setInverseFont(0);
     }
 }
@@ -58,21 +65,27 @@ void displayMenu(const char* title, const char* items[], int count, int selected
 void displayInfo() {
     u8x8.clearDisplay();
     u8x8.drawString(0, 0, "Encoder Info");
-    char buf[22];
+    char buf[18];
     if (enc1.connected) {
         if (!enc1.infoLoaded) encoderLoadInfo(enc1);
-        snprintf(buf, sizeof(buf), "ID:%d Type:%08lX", enc1.nodeId, enc1.deviceType);
+        snprintf(buf, sizeof(buf), "Node: %d", enc1.nodeId);
         u8x8.drawString(0, 2, buf);
-        snprintf(buf, sizeof(buf), "Res:%lu Err:%02X", enc1.resolution, enc1.errorReg);
+        snprintf(buf, sizeof(buf), "Type: %08lX", enc1.deviceType);
+        u8x8.drawString(0, 3, buf);
+        snprintf(buf, sizeof(buf), "Res:  %lu", enc1.resolution);
         u8x8.drawString(0, 4, buf);
+        snprintf(buf, sizeof(buf), "Err:  %02X", enc1.errorReg);
+        u8x8.drawString(0, 5, buf);
         u8x8.drawString(0, 6, enc1.deviceName[0] ? enc1.deviceName : "No name");
+        u8x8.drawString(0, 7, "CENTER=back");
     } else {
-        u8x8.drawString(0, 2, "No encoder");
+        u8x8.drawString(0, 3, "No encoder");
+        u8x8.drawString(0, 7, "CENTER=back");
     }
 }
 
 void displayMessage(const char* line1, const char* line2) {
     u8x8.clearDisplay();
-    if (line1) u8x8.drawString(0, 2, line1);
-    if (line2) u8x8.drawString(0, 4, line2);
+    if (line1) u8x8.drawString(0, 3, line1);
+    if (line2) u8x8.drawString(0, 5, line2);
 }
