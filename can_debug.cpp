@@ -5,11 +5,8 @@
 #include <stdio.h>
 #include <string.h>
 
-// Ensure u8x8 is visible (extern from display.h / defined in display.cpp)
-extern U8X8_SSD1306_128X64_NONAME_HW_I2C u8x8;
-
 #define LOG_LINES 16
-#define LOG_WIDTH 16
+#define LOG_WIDTH 21
 
 static char logBuf[LOG_LINES][LOG_WIDTH + 1];
 static int logCount = 0;
@@ -19,7 +16,6 @@ static bool stopped = false;
 
 static void addLogLine(const char* line) {
     if (!logging) return;
-    // Shift if full
     if (logCount >= LOG_LINES) {
         for (int i = 0; i < LOG_LINES - 1; i++) {
             strcpy(logBuf[i], logBuf[i + 1]);
@@ -29,8 +25,7 @@ static void addLogLine(const char* line) {
     strncpy(logBuf[logCount], line, LOG_WIDTH);
     logBuf[logCount][LOG_WIDTH] = '\0';
     logCount++;
-    // Auto-scroll to bottom
-    if (logCount > 6) logScroll = logCount - 6;
+    if (logCount > 5) logScroll = logCount - 5;
     else logScroll = 0;
 }
 
@@ -56,7 +51,6 @@ bool canDebugIsLogging() { return logging; }
 void canDebugLogTx(uint32_t id, const uint8_t* data, uint8_t len) {
     if (!logging) return;
     char buf[LOG_WIDTH + 1];
-    // Short format: TX ID DLC: first few bytes
     if (len == 0) {
         snprintf(buf, sizeof(buf), "TX %03X 0", id);
     } else if (len <= 2) {
@@ -81,7 +75,7 @@ void canDebugLogRx(const twai_message_t& frame) {
     }
     addLogLine(buf);
 
-    // Stop on first TPDO1 (position data) after we have some activity
+    // Stop on first TPDO1 (position data)
     if (!stopped && (id & 0x780) == 0x180 && len >= 2) {
         addLogLine("--- TPDO stop ---");
         logging = false;
@@ -96,20 +90,22 @@ void canDebugUpdate(Button btn) {
         return;
     }
     if (btn == BTN_UP && logScroll > 0) logScroll--;
-    if (btn == BTN_DOWN && logScroll < logCount - 6 && logCount > 6) logScroll++;
+    if (btn == BTN_DOWN && logScroll < logCount - 5 && logCount > 5) logScroll++;
 
-    // Render
-    u8x8.clearDisplay();
-    u8x8.drawString(0, 0, stopped ? "CAN Debug (done)" : "CAN Debug");
+    u8g2.clearBuffer();
+    u8g2.setFont(u8g2_font_6x10_tf);
+    u8g2.drawStr(0, 10, stopped ? "CAN Debug (done)" : "CAN Debug");
+    u8g2.drawHLine(0, 12, 128);
+
     int start = logScroll;
-    for (int i = 0; i < 6 && (start + i) < logCount; i++) {
-        u8x8.drawString(0, i + 1, logBuf[start + i]);
+    for (int i = 0; i < 5 && (start + i) < logCount; i++) {
+        u8g2.drawStr(0, 24 + i * 10, logBuf[start + i]);
     }
     if (logCount == 0) {
-        u8x8.drawString(0, 2, "Waiting...");
+        u8g2.drawStr(0, 36, "Waiting...");
     }
-    // Scroll hint
-    if (logCount > 6) {
-        u8x8.drawString(0, 7, logScroll > 0 ? "^v" : " v");
+    if (logCount > 5) {
+        u8g2.drawStr(100, 63, logScroll > 0 ? "^v" : " v");
     }
+    u8g2.sendBuffer();
 }
