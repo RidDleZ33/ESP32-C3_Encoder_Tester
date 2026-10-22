@@ -1,4 +1,5 @@
 #include "canbus.h"
+#include "can_debug.h"
 #include <string.h>
 
 bool canbusInit() {
@@ -38,7 +39,11 @@ bool canbusSend(uint32_t id, const uint8_t* data, uint8_t len) {
     msg.extd = 0;
     msg.data_length_code = len;
     if (data && len) memcpy(msg.data, data, len);
-    return twai_transmit(&msg, pdMS_TO_TICKS(10)) == ESP_OK;
+    bool ok = twai_transmit(&msg, pdMS_TO_TICKS(10)) == ESP_OK;
+    if (canDebugIsLogging()) {
+        canDebugLogTx(id, data, len);
+    }
+    return ok;
 }
 
 bool canbusReceive(twai_message_t& frame) {

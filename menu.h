@@ -6,7 +6,8 @@ enum AppState {
     STATE_MENU,
     STATE_INFO,
     STATE_CONFIG,
-    STATE_TEST
+    STATE_TEST,
+    STATE_CAN_DEBUG
 };
 
 void menuInit();

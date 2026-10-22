@@ -1,14 +1,15 @@
 #include "menu.h"
 #include "display.h"
 #include "encoder.h"
+#include "can_debug.h"
 
 static AppState state = STATE_MAIN;
 static int menuSel = 0;
 static int configSel = 0;
 static int testSel = 0;
 
-static const char* mainMenu[] = {"Info", "Config", "Sweep Test", "Etch-a-Sketch", "Move+Dir", "Status"};
-static const int mainMenuCount = 6;
+static const char* mainMenu[] = {"Info", "Config", "Sweep Test", "Etch-a-Sketch", "Move+Dir", "Status", "CAN Debug"};
+static const int mainMenuCount = 7;
 
 static const char* configMenu[] = {"Swap Roles", "Invert E1", "Invert E2", "Back"};
 static const int configMenuCount = 4;
@@ -38,6 +39,7 @@ void menuUpdate(Button btn) {
             if (btn == BTN_CENTER) {
                 if (menuSel == 0) state = STATE_INFO;
                 else if (menuSel == 1) { state = STATE_CONFIG; configSel = 0; }
+                else if (menuSel == 6) { state = STATE_CAN_DEBUG; canDebugEnter(); }
                 else { state = STATE_TEST; testSel = menuSel - 2; }
             }
             if (btn == BTN_LEFT) state = STATE_MAIN;
@@ -72,6 +74,10 @@ void menuUpdate(Button btn) {
 
         case STATE_TEST:
             // Tests handle their own display and exit on CENTER or LEFT
+            break;
+
+        case STATE_CAN_DEBUG:
+            canDebugUpdate(btn);
             break;
     }
 }

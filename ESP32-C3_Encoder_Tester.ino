@@ -6,6 +6,7 @@
 #include "buttons.h"
 #include "menu.h"
 #include "tests.h"
+#include "can_debug.h"
 
 void setup() {
     Serial.begin(115200);
@@ -39,14 +40,17 @@ void loop() {
     // Receive frames
     twai_message_t rx;
     while (canbusReceive(rx)) {
+        if (canDebugIsLogging()) {
+            canDebugLogRx(rx);
+        }
         encoderProcessFrame(rx);
     }
 
     encoderTimeoutCheck();
 
-    // SYNC when configured
+    // SYNC when configured (pause during CAN debug capture)
     static uint32_t lastSync = 0;
-    if ((enc1.configured || enc2.configured) && (millis() - lastSync > SYNC_INTERVAL_MS)) {
+    if (!canDebugIsLogging() && (enc1.configured || enc2.configured) && (millis() - lastSync > SYNC_INTERVAL_MS)) {
         canbusSendSync();
         lastSync = millis();
     }
