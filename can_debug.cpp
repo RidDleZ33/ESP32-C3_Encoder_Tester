@@ -5,6 +5,9 @@
 #include <stdio.h>
 #include <string.h>
 
+// Ensure u8x8 is visible (extern from display.h / defined in display.cpp)
+extern U8X8_SSD1306_128X64_NONAME_HW_I2C u8x8;
+
 #define LOG_LINES 16
 #define LOG_WIDTH 16
 
