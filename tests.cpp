@@ -78,6 +78,7 @@ void testSweep(Button btn) {
         if (btn == BTN_LEFT) { testExit(); return; }
         if (btn == BTN_CENTER) {
             sweepBegin(sweepPick == 0 ? 1 : 2);
+            btn = BTN_NONE; // don't treat the select click as exit
         } else {
             u8g2.clearBuffer();
             u8g2.setFont(u8g2_font_6x10_tf);
