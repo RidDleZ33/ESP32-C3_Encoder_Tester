@@ -4,6 +4,7 @@
 #include "menu.h"
 #include "driver/twai.h"
 #include <stdio.h>
+#include <string.h>
 
 static bool active = false;
 static int currentTest = -1;
@@ -13,7 +14,14 @@ static int etchX = 64, etchY = 32;
 static float movePos = 0;
 static float dirAngle = 0;
 
+// Sweep coverage (single-turn absolute positions)
+#define SWEEP_MAX_STEPS 8192
+static uint8_t sweepSeen[SWEEP_MAX_STEPS / 8];
+static uint32_t sweepSeenCount = 0;
+static uint32_t sweepSteps = SWEEP_MAX_STEPS;
+
 bool testIsActive() { return active; }
+int testGetIndex() { return currentTest; }
 
 void testExit() {
     active = false;
@@ -21,24 +29,50 @@ void testExit() {
     menuSetState(STATE_MENU);
 }
 
+void testSweepOnPosition(uint32_t rawPosition) {
+    if (!active || currentTest != 0) return;
+    uint32_t steps = sweepSteps ? sweepSteps : SWEEP_MAX_STEPS;
+    uint32_t single = rawPosition % steps;
+    if (single >= SWEEP_MAX_STEPS) return;
+
+    uint32_t byteIdx = single >> 3;
+    uint8_t bit = 1u << (single & 7);
+    if (!(sweepSeen[byteIdx] & bit)) {
+        sweepSeen[byteIdx] |= bit;
+        sweepSeenCount++;
+    }
+}
+
 void testSweep(Button btn) {
     if (btn == BTN_CENTER || btn == BTN_LEFT) { testExit(); return; }
-    float a = enc1.connected ? encoderAngle(enc1) : 0;
-    if (a < sweepMin) sweepMin = a;
-    if (a > sweepMax) sweepMax = a;
+
+    float a = 0;
+    uint32_t raw = 0;
+    if (enc1.connected) {
+        a = encoderAngle(enc1);
+        raw = enc1.rawPosition;
+        if (a < sweepMin) sweepMin = a;
+        if (a > sweepMax) sweepMax = a;
+    }
+
+    uint32_t steps = sweepSteps ? sweepSteps : SWEEP_MAX_STEPS;
+    float pct = steps ? (100.0f * sweepSeenCount / steps) : 0;
 
     u8g2.clearBuffer();
-    u8g2.drawStr(0, 10, "Sweep Test");
+    u8g2.setFont(u8g2_font_6x10_tf);
+    u8g2.drawStr(0, 10, "Sweep (slow!)");
     u8g2.drawHLine(0, 12, 128);
 
-    char buf[20];
-    snprintf(buf, sizeof(buf), "Now: %6.1f", a);
-    u8g2.drawStr(0, 26, buf);
-    snprintf(buf, sizeof(buf), "Min: %6.1f", sweepMin);
-    u8g2.drawStr(0, 40, buf);
-    snprintf(buf, sizeof(buf), "Max: %6.1f", sweepMax);
-    u8g2.drawStr(0, 54, buf);
-    u8g2.drawStr(0, 63, "CENTER = exit");
+    char buf[22];
+    snprintf(buf, sizeof(buf), "Ang: %6.1f", a);
+    u8g2.drawStr(0, 24, buf);
+    snprintf(buf, sizeof(buf), "Abs: %lu", raw % 1000000UL);
+    u8g2.drawStr(0, 36, buf);
+    snprintf(buf, sizeof(buf), "Seen: %lu/%lu", sweepSeenCount, steps);
+    u8g2.drawStr(0, 48, buf);
+    snprintf(buf, sizeof(buf), "Cov: %.1f%%", pct);
+    u8g2.drawStr(0, 58, buf);
+    u8g2.drawStr(70, 63, "EXIT");
     u8g2.sendBuffer();
 }
 
@@ -106,6 +140,12 @@ void testRun(int index, Button btn) {
         active = true;
         currentTest = index;
         sweepMin = 999; sweepMax = -999;
+        if (index == 0) {
+            memset(sweepSeen, 0, sizeof(sweepSeen));
+            sweepSeenCount = 0;
+            sweepSteps = (enc1.resolution && enc1.resolution <= SWEEP_MAX_STEPS)
+                         ? enc1.resolution : SWEEP_MAX_STEPS;
+        }
     }
     switch (index) {
         case 0: testSweep(btn); break;
