@@ -42,6 +42,10 @@ void encoderLoadInfo(EncoderData& enc) {
     if (canbusSendSdoRead(enc.nodeId, 0x1018, 0x02, val, sz)) enc.productCode = val;
     if (canbusSendSdoRead(enc.nodeId, 0x1018, 0x04, val, sz)) enc.serial = val;
     if (canbusSendSdoRead(enc.nodeId, 0x6001, 0x00, val, sz)) enc.resolution = val;
+    // Prefer single-turn resolution object if present
+    if (canbusSendSdoRead(enc.nodeId, 0x6501, 0x00, val, sz) && val > 0 && val <= 65536) {
+        enc.resolution = val;
+    }
 
     // Device name (string) - simplified: read first 4 bytes as fallback
     if (canbusSendSdoRead(enc.nodeId, 0x1008, 0x00, val, sz)) {
@@ -94,9 +98,18 @@ void encoderProcessFrame(const twai_message_t& frame) {
             pos |= ((uint32_t)frame.data[2] << 16) | ((uint32_t)frame.data[3] << 24);
         }
         enc->rawPosition = pos;
-        uint32_t steps = enc->resolution ? enc->resolution : ENCODER_MAX_STEPS;
-        uint32_t single = pos % steps;
-        enc->angleDegrees = (single * 360.0f) / steps;
+
+        uint32_t steps = ENCODER_MAX_STEPS;
+        if (enc->resolution && enc->resolution > 0 && enc->resolution <= 65536) {
+            steps = enc->resolution;
+        }
+        if ((steps & (steps - 1)) == 0 && steps > 0) {
+            enc->singleTurn = pos & (steps - 1);
+        } else {
+            enc->singleTurn = pos % steps;
+        }
+
+        enc->angleDegrees = (enc->singleTurn * 360.0f) / (float)steps;
         if (enc->invert) enc->angleDegrees = 360.0f - enc->angleDegrees;
         enc->lastFrameMs = millis();
     } else if ((frame.identifier & 0x700) == 0x700) {
