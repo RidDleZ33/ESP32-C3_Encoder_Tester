@@ -18,7 +18,7 @@
 #define BTN_CENTER_PIN      10
 
 // ========== Encoder ==========
-const uint16_t ENCODER_MAX_STEPS = 4096;  // 12-bit singleturn (180° physical was mapping to 360° with 8192)
+const uint16_t ENCODER_MAX_STEPS = 16384;  // fallback only; prefer encoder-reported resolution
 const uint32_t ENCODER_TIMEOUT_MS = 4000;
 
 // ========== Timing ==========
