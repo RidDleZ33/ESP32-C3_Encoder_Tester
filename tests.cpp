@@ -15,7 +15,7 @@ static float movePos = 0;
 static float dirAngle = 0;
 
 // Sweep coverage (single-turn absolute positions)
-#define SWEEP_MAX_STEPS 8192
+#define SWEEP_MAX_STEPS 4096
 static uint8_t sweepSeen[SWEEP_MAX_STEPS / 8];
 static uint32_t sweepSeenCount = 0;
 static uint32_t sweepSteps = SWEEP_MAX_STEPS;
@@ -156,9 +156,12 @@ void testRun(int index, Button btn) {
         if (index == 0) {
             memset(sweepSeen, 0, sizeof(sweepSeen));
             sweepSeenCount = 0;
-            // Use reported resolution if it looks like a reasonable single-turn value
+            // Use reported resolution if it looks like a reasonable single-turn value.
+            // Force 4096 when the encoder reports 8192 (physical 180° was mapping to 360°).
             uint32_t res = enc1.resolution;
-            if (res > 0 && res <= SWEEP_MAX_STEPS) {
+            if (res == 8192 || res == 0) {
+                sweepSteps = 4096;
+            } else if (res > 0 && res <= SWEEP_MAX_STEPS) {
                 sweepSteps = res;
             } else {
                 sweepSteps = SWEEP_MAX_STEPS;
