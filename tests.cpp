@@ -14,6 +14,11 @@ static int etchX = 64, etchY = 32;
 static float movePos = 0;
 static float dirAngle = 0;
 
+// Which encoder the sweep is testing (1 or 2). 0 = not chosen yet.
+static int sweepWhich = 0;
+static bool sweepSelecting = false;
+static int sweepPick = 0;
+
 #define SWEEP_MAX_STEPS 16384
 static uint8_t sweepSeen[SWEEP_MAX_STEPS / 8];
 static uint32_t sweepSeenCount = 0;
@@ -25,13 +30,20 @@ int testGetIndex() { return currentTest; }
 void testExit() {
     active = false;
     currentTest = -1;
+    sweepSelecting = false;
+    sweepWhich = 0;
     menuSetState(STATE_MENU);
 }
 
-void testSweepOnPosition(uint32_t rawPosition) {
-    if (!active || currentTest != 0) return;
+static EncoderData* sweepEnc() {
+    return (sweepWhich == 2) ? &enc2 : &enc1;
+}
 
-    uint32_t single = enc1.singleTurn;
+void testSweepOnPosition(uint32_t rawPosition) {
+    if (!active || currentTest != 0 || sweepSelecting || sweepWhich == 0) return;
+
+    EncoderData* enc = sweepEnc();
+    uint32_t single = enc->singleTurn;
     uint32_t steps = sweepSteps ? sweepSteps : SWEEP_MAX_STEPS;
 
     if (single == 0 && rawPosition != 0 && rawPosition < steps) {
@@ -47,23 +59,69 @@ void testSweepOnPosition(uint32_t rawPosition) {
     }
 }
 
+static void sweepBegin(int which) {
+    sweepWhich = which;
+    sweepSelecting = false;
+    sweepMin = 999;
+    sweepMax = -999;
+    memset(sweepSeen, 0, sizeof(sweepSeen));
+    sweepSeenCount = 0;
+    EncoderData* enc = sweepEnc();
+    uint32_t res = enc->resolution;
+    sweepSteps = (res > 0 && res <= SWEEP_MAX_STEPS) ? res : SWEEP_MAX_STEPS;
+}
+
 void testSweep(Button btn) {
+    // Picker when both are connected
+    if (sweepSelecting) {
+        if (btn == BTN_UP || btn == BTN_DOWN) sweepPick = 1 - sweepPick;
+        if (btn == BTN_LEFT) { testExit(); return; }
+        if (btn == BTN_CENTER) {
+            sweepBegin(sweepPick == 0 ? 1 : 2);
+        } else {
+            u8g2.clearBuffer();
+            u8g2.setFont(u8g2_font_6x10_tf);
+            u8g2.drawStr(0, 10, "Sweep which?");
+            u8g2.drawHLine(0, 12, 128);
+            if (sweepPick == 0) {
+                u8g2.drawBox(0, 16, 128, 12);
+                u8g2.setDrawColor(0);
+                u8g2.drawStr(2, 26, "E1");
+                u8g2.setDrawColor(1);
+                u8g2.drawStr(2, 42, "E2");
+            } else {
+                u8g2.drawStr(2, 26, "E1");
+                u8g2.drawBox(0, 32, 128, 12);
+                u8g2.setDrawColor(0);
+                u8g2.drawStr(2, 42, "E2");
+                u8g2.setDrawColor(1);
+            }
+            u8g2.drawStr(0, 63, "CENTER=select");
+            u8g2.sendBuffer();
+            return;
+        }
+    }
+
     if (btn == BTN_CENTER || btn == BTN_LEFT) { testExit(); return; }
 
+    EncoderData* enc = sweepEnc();
     float a = 0;
     uint32_t raw = 0;
     uint32_t single = 0;
-    if (enc1.connected) {
-        a = encoderAngle(enc1);
-        raw = enc1.rawPosition;
-        single = enc1.singleTurn;
+    if (enc->connected) {
+        a = encoderAngle(*enc);
+        raw = enc->rawPosition;
+        single = enc->singleTurn;
         if (a < sweepMin) sweepMin = a;
         if (a > sweepMax) sweepMax = a;
     }
 
+    char title[22];
+    snprintf(title, sizeof(title), "Sweep E%d (slow!)", sweepWhich);
+
     u8g2.clearBuffer();
     u8g2.setFont(u8g2_font_6x10_tf);
-    u8g2.drawStr(0, 10, "Sweep E1 (slow!)");
+    u8g2.drawStr(0, 10, title);
     u8g2.drawHLine(0, 12, 128);
 
     char buf[22];
@@ -142,13 +200,14 @@ void testRun(int index, Button btn) {
         currentTest = index;
         sweepMin = 999; sweepMax = -999;
         if (index == 0) {
-            memset(sweepSeen, 0, sizeof(sweepSeen));
-            sweepSeenCount = 0;
-            uint32_t res = enc1.resolution;
-            if (res > 0 && res <= SWEEP_MAX_STEPS) {
-                sweepSteps = res;
+            if (enc1.connected && enc2.connected) {
+                sweepSelecting = true;
+                sweepPick = 0;
+                sweepWhich = 0;
+            } else if (enc2.connected) {
+                sweepBegin(2);
             } else {
-                sweepSteps = SWEEP_MAX_STEPS;
+                sweepBegin(1);
             }
         }
     }
