@@ -32,19 +32,15 @@ void testExit() {
 void testSweepOnPosition(uint32_t rawPosition) {
     if (!active || currentTest != 0) return;
 
-    // Prefer the already-extracted single-turn value when available
+    // Mark only the single-turn value (0 .. resolution-1).
+    // Caller passes singleTurn; re-read in case it was updated.
     uint32_t single = enc1.singleTurn;
     uint32_t steps = sweepSteps ? sweepSteps : SWEEP_MAX_STEPS;
 
-    // Fallback if singleTurn not yet populated
-    if (single == 0 && rawPosition != 0) {
-        if ((steps & (steps - 1)) == 0) {
-            single = rawPosition & (steps - 1);
-        } else {
-            single = rawPosition % steps;
-        }
+    if (single == 0 && rawPosition != 0 && rawPosition < steps) {
+        single = rawPosition;
     }
-    if (single >= SWEEP_MAX_STEPS) return;
+    if (single >= steps || single >= SWEEP_MAX_STEPS) return;
 
     uint32_t byteIdx = single >> 3;
     uint8_t bit = 1u << (single & 7);
@@ -73,18 +69,18 @@ void testSweep(Button btn) {
 
     u8g2.clearBuffer();
     u8g2.setFont(u8g2_font_6x10_tf);
-    u8g2.drawStr(0, 10, "Sweep (slow!)");
-    u8g2.drawHLine(0, 12, 128);
+    u8g2.drawStr(0, 9, "Sweep (slow!)");
+    u8g2.drawHLine(0, 11, 128);
 
     char buf[22];
-    snprintf(buf, sizeof(buf), "Ang: %5.1f", a);
-    u8g2.drawStr(0, 24, buf);
-    snprintf(buf, sizeof(buf), "ST: %lu", single);
-    u8g2.drawStr(0, 36, buf);
+    snprintf(buf, sizeof(buf), "Ang:%5.1f ST:%lu", a, single);
+    u8g2.drawStr(0, 22, buf);
     snprintf(buf, sizeof(buf), "Abs:%lu", raw % 1000000UL);
-    u8g2.drawStr(0, 46, buf);
+    u8g2.drawStr(0, 33, buf);
     snprintf(buf, sizeof(buf), "Seen:%lu/%lu %.0f%%", sweepSeenCount, steps, pct);
-    u8g2.drawStr(0, 56, buf);
+    u8g2.drawStr(0, 44, buf);
+    snprintf(buf, sizeof(buf), "Rng:%.0f-%.0f", sweepMin > 900 ? 0 : sweepMin, sweepMax < -900 ? 0 : sweepMax);
+    u8g2.drawStr(0, 55, buf);
     u8g2.drawStr(0, 63, "CENTER=exit");
     u8g2.sendBuffer();
 }
@@ -156,7 +152,6 @@ void testRun(int index, Button btn) {
         if (index == 0) {
             memset(sweepSeen, 0, sizeof(sweepSeen));
             sweepSeenCount = 0;
-            // Use reported resolution when it looks reasonable; otherwise fallback.
             uint32_t res = enc1.resolution;
             if (res > 0 && res <= SWEEP_MAX_STEPS) {
                 sweepSteps = res;
