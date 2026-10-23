@@ -25,26 +25,23 @@ void displaySplash() {
 
 void displayMain() {
     u8g2.clearBuffer();
+    u8g2.setFont(u8g2_font_6x10_tf);
     u8g2.drawStr(0, 10, "AMARC Tester");
     u8g2.drawHLine(0, 12, 128);
 
-    char buf[20];
+    char buf[22];
     if (enc1.connected) {
-        snprintf(buf, sizeof(buf), "E1 ID:%d", enc1.nodeId);
-        u8g2.drawStr(0, 26, buf);
-        snprintf(buf, sizeof(buf), "  %.1f deg", encoderAngle(enc1));
-        u8g2.drawStr(0, 36, buf);
+        snprintf(buf, sizeof(buf), "E1 ID:%d | %.1f deg", enc1.nodeId, encoderAngle(enc1));
+        u8g2.drawStr(0, 28, buf);
     } else {
-        u8g2.drawStr(0, 26, "E1 OFF");
+        u8g2.drawStr(0, 28, "E1 OFF");
     }
 
     if (enc2.connected) {
-        snprintf(buf, sizeof(buf), "E2 ID:%d", enc2.nodeId);
-        u8g2.drawStr(0, 48, buf);
-        snprintf(buf, sizeof(buf), "  %.1f deg", encoderAngle(enc2));
-        u8g2.drawStr(0, 58, buf);
+        snprintf(buf, sizeof(buf), "E2 ID:%d | %.1f deg", enc2.nodeId, encoderAngle(enc2));
+        u8g2.drawStr(0, 44, buf);
     } else {
-        u8g2.drawStr(0, 48, "E2 OFF");
+        u8g2.drawStr(0, 44, "E2 OFF");
     }
 
     u8g2.drawStr(0, 63, "CENTER = Menu");
