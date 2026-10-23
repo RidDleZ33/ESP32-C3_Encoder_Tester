@@ -75,25 +75,61 @@ void displayMenu(const char* title, const char* items[], int count, int selected
     u8g2.sendBuffer();
 }
 
-void displayInfo() {
-    u8g2.clearBuffer();
-    u8g2.drawStr(0, 10, "Encoder Info");
-    u8g2.drawHLine(0, 12, 128);
+void displayInfo(int scroll) {
+    const int MAX_LINES = 16;
+    char lines[MAX_LINES][22];
+    int n = 0;
+
+    auto add = [&](const char* s) {
+        if (n < MAX_LINES) {
+            snprintf(lines[n], sizeof(lines[n]), "%s", s);
+            n++;
+        }
+    };
 
     char buf[22];
     if (enc1.connected) {
         if (!enc1.infoLoaded) encoderLoadInfo(enc1);
+        add("--- E1 ---");
         snprintf(buf, sizeof(buf), "Node: %d", enc1.nodeId);
-        u8g2.drawStr(0, 24, buf);
+        add(buf);
         snprintf(buf, sizeof(buf), "Type: %08lX", enc1.deviceType);
-        u8g2.drawStr(0, 34, buf);
+        add(buf);
         snprintf(buf, sizeof(buf), "Res:  %lu", enc1.resolution);
-        u8g2.drawStr(0, 44, buf);
+        add(buf);
         snprintf(buf, sizeof(buf), "Err:  %02X", enc1.errorReg);
-        u8g2.drawStr(0, 54, buf);
-        u8g2.drawStr(0, 63, enc1.deviceName[0] ? enc1.deviceName : "No name");
+        add(buf);
+        add(enc1.deviceName[0] ? enc1.deviceName : "No name");
     } else {
-        u8g2.drawStr(0, 36, "No encoder");
+        add("E1: not connected");
+    }
+
+    if (enc2.connected) {
+        if (!enc2.infoLoaded) encoderLoadInfo(enc2);
+        add("--- E2 ---");
+        snprintf(buf, sizeof(buf), "Node: %d", enc2.nodeId);
+        add(buf);
+        snprintf(buf, sizeof(buf), "Type: %08lX", enc2.deviceType);
+        add(buf);
+        snprintf(buf, sizeof(buf), "Res:  %lu", enc2.resolution);
+        add(buf);
+        snprintf(buf, sizeof(buf), "Err:  %02X", enc2.errorReg);
+        add(buf);
+        add(enc2.deviceName[0] ? enc2.deviceName : "No name");
+    } else {
+        add("E2: not connected");
+    }
+
+    if (scroll < 0) scroll = 0;
+    if (n > 5 && scroll > n - 5) scroll = n - 5;
+
+    u8g2.clearBuffer();
+    u8g2.setFont(u8g2_font_6x10_tf);
+    u8g2.drawStr(0, 10, "Encoder Info");
+    u8g2.drawHLine(0, 12, 128);
+
+    for (int i = 0; i < 5 && (scroll + i) < n; i++) {
+        u8g2.drawStr(0, 24 + i * 10, lines[scroll + i]);
     }
     u8g2.sendBuffer();
 }
