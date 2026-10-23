@@ -66,10 +66,11 @@ void testSweep(Button btn) {
 
     uint32_t steps = sweepSteps ? sweepSteps : SWEEP_MAX_STEPS;
     float pct = steps ? (100.0f * sweepSeenCount / steps) : 0;
+    bool passed = (steps > 0 && sweepSeenCount >= steps);
 
     u8g2.clearBuffer();
     u8g2.setFont(u8g2_font_6x10_tf);
-    u8g2.drawStr(0, 9, "Sweep (slow!)");
+    u8g2.drawStr(0, 9, passed ? "TEST PASS" : "Sweep (slow!)");
     u8g2.drawHLine(0, 11, 128);
 
     char buf[22];
@@ -152,6 +153,7 @@ void testRun(int index, Button btn) {
         if (index == 0) {
             memset(sweepSeen, 0, sizeof(sweepSeen));
             sweepSeenCount = 0;
+            // Use reported resolution when it looks reasonable; otherwise fallback.
             uint32_t res = enc1.resolution;
             if (res > 0 && res <= SWEEP_MAX_STEPS) {
                 sweepSteps = res;
