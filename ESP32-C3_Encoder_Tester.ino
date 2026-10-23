@@ -44,9 +44,9 @@ void loop() {
             canDebugLogRx(rx);
         }
         encoderProcessFrame(rx);
-        // Mark every single-turn position for the sweep coverage test
-        if (testIsActive() && testGetIndex() == 0 && enc1.connected) {
-            testSweepOnPosition(enc1.singleTurn);
+        // Mark the encoder currently under sweep test
+        if (testIsActive() && testGetIndex() == 0) {
+            testSweepOnPosition(0);
         }
     }
 
