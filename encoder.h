@@ -1,5 +1,6 @@
 #pragma once
 #include <Arduino.h>
+#include "driver/twai.h"
 #include "config.h"
 
 struct EncoderData {
