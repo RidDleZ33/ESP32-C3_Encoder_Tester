@@ -14,7 +14,6 @@ static int etchX = 64, etchY = 32;
 static float movePos = 0;
 static float dirAngle = 0;
 
-// Sweep coverage (single-turn absolute positions)
 #define SWEEP_MAX_STEPS 16384
 static uint8_t sweepSeen[SWEEP_MAX_STEPS / 8];
 static uint32_t sweepSeenCount = 0;
@@ -32,8 +31,6 @@ void testExit() {
 void testSweepOnPosition(uint32_t rawPosition) {
     if (!active || currentTest != 0) return;
 
-    // Mark only the single-turn value (0 .. resolution-1).
-    // Caller passes singleTurn; re-read in case it was updated.
     uint32_t single = enc1.singleTurn;
     uint32_t steps = sweepSteps ? sweepSteps : SWEEP_MAX_STEPS;
 
@@ -66,7 +63,7 @@ void testSweep(Button btn) {
 
     u8g2.clearBuffer();
     u8g2.setFont(u8g2_font_6x10_tf);
-    u8g2.drawStr(0, 10, "Sweep (slow!)");
+    u8g2.drawStr(0, 10, "Sweep E1 (slow!)");
     u8g2.drawHLine(0, 12, 128);
 
     char buf[22];
@@ -147,7 +144,6 @@ void testRun(int index, Button btn) {
         if (index == 0) {
             memset(sweepSeen, 0, sizeof(sweepSeen));
             sweepSeenCount = 0;
-            // Use reported resolution when it looks reasonable; otherwise fallback.
             uint32_t res = enc1.resolution;
             if (res > 0 && res <= SWEEP_MAX_STEPS) {
                 sweepSteps = res;
