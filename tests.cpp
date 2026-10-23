@@ -31,8 +31,19 @@ void testExit() {
 
 void testSweepOnPosition(uint32_t rawPosition) {
     if (!active || currentTest != 0) return;
+
+    // Prefer the already-extracted single-turn value when available
+    uint32_t single = enc1.singleTurn;
     uint32_t steps = sweepSteps ? sweepSteps : SWEEP_MAX_STEPS;
-    uint32_t single = rawPosition % steps;
+
+    // Fallback if singleTurn not yet populated
+    if (single == 0 && rawPosition != 0) {
+        if ((steps & (steps - 1)) == 0) {
+            single = rawPosition & (steps - 1);
+        } else {
+            single = rawPosition % steps;
+        }
+    }
     if (single >= SWEEP_MAX_STEPS) return;
 
     uint32_t byteIdx = single >> 3;
@@ -48,9 +59,11 @@ void testSweep(Button btn) {
 
     float a = 0;
     uint32_t raw = 0;
+    uint32_t single = 0;
     if (enc1.connected) {
         a = encoderAngle(enc1);
         raw = enc1.rawPosition;
+        single = enc1.singleTurn;
         if (a < sweepMin) sweepMin = a;
         if (a > sweepMax) sweepMax = a;
     }
@@ -64,15 +77,15 @@ void testSweep(Button btn) {
     u8g2.drawHLine(0, 12, 128);
 
     char buf[22];
-    snprintf(buf, sizeof(buf), "Ang: %6.1f", a);
+    snprintf(buf, sizeof(buf), "Ang: %5.1f", a);
     u8g2.drawStr(0, 24, buf);
-    snprintf(buf, sizeof(buf), "Abs: %lu", raw % 1000000UL);
+    snprintf(buf, sizeof(buf), "ST: %lu", single);
     u8g2.drawStr(0, 36, buf);
-    snprintf(buf, sizeof(buf), "Seen: %lu/%lu", sweepSeenCount, steps);
-    u8g2.drawStr(0, 48, buf);
-    snprintf(buf, sizeof(buf), "Cov: %.1f%%", pct);
-    u8g2.drawStr(0, 58, buf);
-    u8g2.drawStr(70, 63, "EXIT");
+    snprintf(buf, sizeof(buf), "Abs:%lu", raw % 1000000UL);
+    u8g2.drawStr(0, 46, buf);
+    snprintf(buf, sizeof(buf), "Seen:%lu/%lu %.0f%%", sweepSeenCount, steps, pct);
+    u8g2.drawStr(0, 56, buf);
+    u8g2.drawStr(0, 63, "CENTER=exit");
     u8g2.sendBuffer();
 }
 
@@ -143,8 +156,13 @@ void testRun(int index, Button btn) {
         if (index == 0) {
             memset(sweepSeen, 0, sizeof(sweepSeen));
             sweepSeenCount = 0;
-            sweepSteps = (enc1.resolution && enc1.resolution <= SWEEP_MAX_STEPS)
-                         ? enc1.resolution : SWEEP_MAX_STEPS;
+            // Use reported resolution if it looks like a reasonable single-turn value
+            uint32_t res = enc1.resolution;
+            if (res > 0 && res <= SWEEP_MAX_STEPS) {
+                sweepSteps = res;
+            } else {
+                sweepSteps = SWEEP_MAX_STEPS;
+            }
         }
     }
     switch (index) {
