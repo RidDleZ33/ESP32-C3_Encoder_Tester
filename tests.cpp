@@ -64,24 +64,18 @@ void testSweep(Button btn) {
         if (a > sweepMax) sweepMax = a;
     }
 
-    uint32_t steps = sweepSteps ? sweepSteps : SWEEP_MAX_STEPS;
-    float pct = steps ? (100.0f * sweepSeenCount / steps) : 0;
-    bool passed = (steps > 0 && sweepSeenCount >= steps);
-
     u8g2.clearBuffer();
     u8g2.setFont(u8g2_font_6x10_tf);
-    u8g2.drawStr(0, 9, passed ? "TEST PASS" : "Sweep (slow!)");
-    u8g2.drawHLine(0, 11, 128);
+    u8g2.drawStr(0, 10, "Sweep (slow!)");
+    u8g2.drawHLine(0, 12, 128);
 
     char buf[22];
     snprintf(buf, sizeof(buf), "Ang:%5.1f ST:%lu", a, single);
-    u8g2.drawStr(0, 22, buf);
+    u8g2.drawStr(0, 26, buf);
     snprintf(buf, sizeof(buf), "Abs:%lu", raw % 1000000UL);
-    u8g2.drawStr(0, 33, buf);
-    snprintf(buf, sizeof(buf), "Seen:%lu/%lu %.0f%%", sweepSeenCount, steps, pct);
-    u8g2.drawStr(0, 44, buf);
+    u8g2.drawStr(0, 40, buf);
     snprintf(buf, sizeof(buf), "Rng:%.0f-%.0f", sweepMin > 900 ? 0 : sweepMin, sweepMax < -900 ? 0 : sweepMax);
-    u8g2.drawStr(0, 55, buf);
+    u8g2.drawStr(0, 54, buf);
     u8g2.drawStr(0, 63, "CENTER=exit");
     u8g2.sendBuffer();
 }
