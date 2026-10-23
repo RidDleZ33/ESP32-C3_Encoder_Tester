@@ -99,16 +99,10 @@ void encoderProcessFrame(const twai_message_t& frame) {
         }
         enc->rawPosition = pos;
 
-        // Prefer single-turn resolution. 0x6001 is measuring units; fall back to 12-bit.
-        // Many absolute encoders put single-turn in the lower bits of the 32-bit position.
-        // Physical 180° was mapping to 360° with 8192, so force 4096 in that case.
+        // Use encoder-reported resolution when available; otherwise fallback.
         uint32_t steps = ENCODER_MAX_STEPS;
         if (enc->resolution && enc->resolution > 0 && enc->resolution <= 65536) {
-            if (enc->resolution == 8192) {
-                steps = 4096;
-            } else {
-                steps = enc->resolution;
-            }
+            steps = enc->resolution;
         }
         // Mask to power-of-two single-turn when possible (most common for these encoders)
         if ((steps & (steps - 1)) == 0 && steps > 0) {
