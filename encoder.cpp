@@ -18,16 +18,12 @@ uint8_t extractNodeId(uint32_t cobId) {
 }
 
 void encoderConfigure(uint8_t nodeId) {
-    // TPDO1 transmission type = 1 (every SYNC)
     canbusSendSdoWrite(nodeId, 0x1800, 0x02, 1, 1);
     delay(20);
-    // Event timer 50 ms fallback
     canbusSendSdoWrite(nodeId, 0x1800, 0x05, 50, 2);
     delay(20);
-    // Heartbeat 1000 ms
     canbusSendSdoWrite(nodeId, 0x1017, 0x00, 1000, 2);
     delay(20);
-    // NMT Start
     canbusSendNmt(0x01, nodeId);
 }
 
@@ -42,12 +38,10 @@ void encoderLoadInfo(EncoderData& enc) {
     if (canbusSendSdoRead(enc.nodeId, 0x1018, 0x02, val, sz)) enc.productCode = val;
     if (canbusSendSdoRead(enc.nodeId, 0x1018, 0x04, val, sz)) enc.serial = val;
     if (canbusSendSdoRead(enc.nodeId, 0x6001, 0x00, val, sz)) enc.resolution = val;
-    // Prefer single-turn resolution object if present
     if (canbusSendSdoRead(enc.nodeId, 0x6501, 0x00, val, sz) && val > 0 && val <= 65536) {
         enc.resolution = val;
     }
 
-    // Device name (string) - simplified: read first 4 bytes as fallback
     if (canbusSendSdoRead(enc.nodeId, 0x1008, 0x00, val, sz)) {
         snprintf(enc.deviceName, sizeof(enc.deviceName), "%c%c%c%c",
                  (char)(val & 0xFF), (char)((val >> 8) & 0xFF),
@@ -99,16 +93,16 @@ void encoderProcessFrame(const twai_message_t& frame) {
         }
         enc->rawPosition = pos;
 
-        // Use encoder-reported resolution when available; otherwise fallback.
         uint32_t steps = ENCODER_MAX_STEPS;
         if (enc->resolution && enc->resolution > 0 && enc->resolution <= 65536) {
             steps = enc->resolution;
         }
-        // Mask to power-of-two single-turn when possible (most common for these encoders)
         if ((steps & (steps - 1)) == 0 && steps > 0) {
             enc->singleTurn = pos & (steps - 1);
+            enc->turns = pos / steps;
         } else {
             enc->singleTurn = pos % steps;
+            enc->turns = pos / steps;
         }
 
         enc->angleDegrees = (enc->singleTurn * 360.0f) / (float)steps;
