@@ -72,13 +72,12 @@ static void sweepBegin(int which) {
 }
 
 void testSweep(Button btn) {
-    // Picker when both are connected
     if (sweepSelecting) {
         if (btn == BTN_UP || btn == BTN_DOWN) sweepPick = 1 - sweepPick;
         if (btn == BTN_LEFT) { testExit(); return; }
         if (btn == BTN_CENTER) {
             sweepBegin(sweepPick == 0 ? 1 : 2);
-            btn = BTN_NONE; // don't treat the select click as exit
+            btn = BTN_NONE;
         } else {
             u8g2.clearBuffer();
             u8g2.setFont(u8g2_font_6x10_tf);
@@ -118,7 +117,12 @@ void testSweep(Button btn) {
     }
 
     char title[22];
-    snprintf(title, sizeof(title), "Sweep E%d (slow!)", sweepWhich);
+    bool passed = (sweepSteps > 0 && sweepSeenCount >= sweepSteps);
+    if (passed) {
+        snprintf(title, sizeof(title), "E%d TEST PASS", sweepWhich);
+    } else {
+        snprintf(title, sizeof(title), "Sweep E%d (slow!)", sweepWhich);
+    }
 
     u8g2.clearBuffer();
     u8g2.setFont(u8g2_font_6x10_tf);
@@ -127,11 +131,13 @@ void testSweep(Button btn) {
 
     char buf[22];
     snprintf(buf, sizeof(buf), "Ang:%5.1f ST:%lu", a, single);
-    u8g2.drawStr(0, 26, buf);
+    u8g2.drawStr(0, 24, buf);
     snprintf(buf, sizeof(buf), "Abs:%lu", raw % 1000000UL);
-    u8g2.drawStr(0, 40, buf);
+    u8g2.drawStr(0, 36, buf);
+    snprintf(buf, sizeof(buf), "Seen:%lu/%lu", sweepSeenCount, sweepSteps);
+    u8g2.drawStr(0, 48, buf);
     snprintf(buf, sizeof(buf), "Rng:%.0f-%.0f", sweepMin > 900 ? 0 : sweepMin, sweepMax < -900 ? 0 : sweepMax);
-    u8g2.drawStr(0, 54, buf);
+    u8g2.drawStr(0, 58, buf);
     u8g2.drawStr(0, 63, "CENTER=exit");
     u8g2.sendBuffer();
 }
