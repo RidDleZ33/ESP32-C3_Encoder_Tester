@@ -151,8 +151,6 @@ void testSweep(Button btn) {
     u8g2.drawStr(0, 36, buf);
     snprintf(buf, sizeof(buf), "Wraps:%d MT+/-1:%s", sweepWraps, sweepMtOk ? "OK" : "--");
     u8g2.drawStr(0, 48, buf);
-    snprintf(buf, sizeof(buf), "Rng:%.0f-%.0f", sweepMin > 900 ? 0 : sweepMin, sweepMax < -900 ? 0 : sweepMax);
-    u8g2.drawStr(0, 58, buf);
     u8g2.drawStr(0, 63, "CENTER=exit");
     u8g2.sendBuffer();
 }
