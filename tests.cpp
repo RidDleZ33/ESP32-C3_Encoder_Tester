@@ -14,14 +14,16 @@ static int etchX = 64, etchY = 32;
 static float movePos = 0;
 static float dirAngle = 0;
 
-// Which encoder the sweep is testing (1 or 2). 0 = not chosen yet.
 static int sweepWhich = 0;
 static bool sweepSelecting = false;
 static int sweepPick = 0;
+static int sweepWraps = 0;
+static uint32_t sweepLastST = 0;
+static bool sweepHaveLast = false;
+static uint32_t sweepLastTurns = 0;
+static bool sweepMtOk = false;
 
 #define SWEEP_MAX_STEPS 16384
-static uint8_t sweepSeen[SWEEP_MAX_STEPS / 8];
-static uint32_t sweepSeenCount = 0;
 static uint32_t sweepSteps = SWEEP_MAX_STEPS;
 
 bool testIsActive() { return active; }
@@ -40,23 +42,31 @@ static EncoderData* sweepEnc() {
 }
 
 void testSweepOnPosition(uint32_t rawPosition) {
+    (void)rawPosition;
     if (!active || currentTest != 0 || sweepSelecting || sweepWhich == 0) return;
 
     EncoderData* enc = sweepEnc();
     uint32_t single = enc->singleTurn;
     uint32_t steps = sweepSteps ? sweepSteps : SWEEP_MAX_STEPS;
+    if (steps == 0) return;
 
-    if (single == 0 && rawPosition != 0 && rawPosition < steps) {
-        single = rawPosition;
+    if (!sweepHaveLast) {
+        sweepLastST = single;
+        sweepLastTurns = enc->turns;
+        sweepHaveLast = true;
+        return;
     }
-    if (single >= steps || single >= SWEEP_MAX_STEPS) return;
 
-    uint32_t byteIdx = single >> 3;
-    uint8_t bit = 1u << (single & 7);
-    if (!(sweepSeen[byteIdx] & bit)) {
-        sweepSeen[byteIdx] |= bit;
-        sweepSeenCount++;
+    bool wrapFwd = (sweepLastST > (steps * 3 / 4)) && (single < (steps / 4));
+    bool wrapRev = (sweepLastST < (steps / 4)) && (single > (steps * 3 / 4));
+    if (wrapFwd || wrapRev) {
+        sweepWraps++;
+        int32_t dTurns = (int32_t)enc->turns - (int32_t)sweepLastTurns;
+        if (dTurns == 1 || dTurns == -1) sweepMtOk = true;
     }
+
+    sweepLastST = single;
+    sweepLastTurns = enc->turns;
 }
 
 static void sweepBegin(int which) {
@@ -64,8 +74,9 @@ static void sweepBegin(int which) {
     sweepSelecting = false;
     sweepMin = 999;
     sweepMax = -999;
-    memset(sweepSeen, 0, sizeof(sweepSeen));
-    sweepSeenCount = 0;
+    sweepWraps = 0;
+    sweepHaveLast = false;
+    sweepMtOk = false;
     EncoderData* enc = sweepEnc();
     uint32_t res = enc->resolution;
     sweepSteps = (res > 0 && res <= SWEEP_MAX_STEPS) ? res : SWEEP_MAX_STEPS;
@@ -108,20 +119,24 @@ void testSweep(Button btn) {
     float a = 0;
     uint32_t raw = 0;
     uint32_t single = 0;
+    uint32_t mt = 0;
     if (enc->connected) {
         a = encoderAngle(*enc);
         raw = enc->rawPosition;
         single = enc->singleTurn;
+        mt = enc->turns;
         if (a < sweepMin) sweepMin = a;
         if (a > sweepMax) sweepMax = a;
     }
 
+    int turnsDone = sweepWraps > 2 ? 2 : sweepWraps;
+    bool passed = (turnsDone >= 2);
+
     char title[22];
-    bool passed = (sweepSteps > 0 && sweepSeenCount >= sweepSteps);
     if (passed) {
         snprintf(title, sizeof(title), "E%d TEST PASS", sweepWhich);
     } else {
-        snprintf(title, sizeof(title), "Sweep E%d (slow!)", sweepWhich);
+        snprintf(title, sizeof(title), "Sweep E%d %d/2", sweepWhich, turnsDone);
     }
 
     u8g2.clearBuffer();
@@ -132,9 +147,9 @@ void testSweep(Button btn) {
     char buf[22];
     snprintf(buf, sizeof(buf), "Ang:%5.1f ST:%lu", a, single);
     u8g2.drawStr(0, 24, buf);
-    snprintf(buf, sizeof(buf), "Abs:%lu", raw % 1000000UL);
+    snprintf(buf, sizeof(buf), "MT:%lu Abs:%lu", mt, raw % 100000UL);
     u8g2.drawStr(0, 36, buf);
-    snprintf(buf, sizeof(buf), "Seen:%lu/%lu", sweepSeenCount, sweepSteps);
+    snprintf(buf, sizeof(buf), "Wraps:%d MT+/-1:%s", sweepWraps, sweepMtOk ? "OK" : "--");
     u8g2.drawStr(0, 48, buf);
     snprintf(buf, sizeof(buf), "Rng:%.0f-%.0f", sweepMin > 900 ? 0 : sweepMin, sweepMax < -900 ? 0 : sweepMax);
     u8g2.drawStr(0, 58, buf);
