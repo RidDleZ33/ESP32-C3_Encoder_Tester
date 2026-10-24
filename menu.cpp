@@ -1,6 +1,7 @@
 #include "menu.h"
 #include "display.h"
 #include "encoder.h"
+#include "canbus.h"
 #include "can_debug.h"
 #include <stdio.h>
 
@@ -10,6 +11,8 @@ static int configSel = 0;
 static int testSel = 0;
 static int infoScroll = 0;
 static bool rolesSwapped = false;
+static char configStatus[22] = "";
+static uint32_t configStatusUntil = 0;
 
 static const char* mainMenu[] = {"Info", "Config", "Sweep Test", "Etch-a-Sketch", "Move+Dir", "Status", "CAN Debug"};
 static const int mainMenuCount = 7;
@@ -23,6 +26,18 @@ void menuInit() {
 AppState menuGetState() { return state; }
 void menuSetState(AppState s) { state = s; }
 int menuGetTestIndex() { return testSel; }
+
+static void resetMultiturn(EncoderData& enc) {
+    if (!enc.connected || enc.nodeId == 0) {
+        snprintf(configStatus, sizeof(configStatus), "E not connected");
+        configStatusUntil = millis() + 1200;
+        return;
+    }
+    // CiA 406 object 0x6003: preset current position to 0
+    canbusSendSdoWrite(enc.nodeId, 0x6003, 0x00, 0, 4);
+    snprintf(configStatus, sizeof(configStatus), "MT reset sent");
+    configStatusUntil = millis() + 1200;
+}
 
 void menuUpdate(Button btn) {
     switch (state) {
@@ -55,8 +70,9 @@ void menuUpdate(Button btn) {
             break;
 
         case STATE_CONFIG: {
+            const int cfgCount = 6;
             if (btn == BTN_UP && configSel > 0) configSel--;
-            if (btn == BTN_DOWN && configSel < 3) configSel++;
+            if (btn == BTN_DOWN && configSel < cfgCount - 1) configSel++;
             if (btn == BTN_CENTER) {
                 if (configSel == 0) {
                     EncoderData tmp = enc1;
@@ -68,17 +84,31 @@ void menuUpdate(Button btn) {
                 } else if (configSel == 2) {
                     enc2.invert = !enc2.invert;
                 } else if (configSel == 3) {
+                    resetMultiturn(enc1);
+                } else if (configSel == 4) {
+                    resetMultiturn(enc2);
+                } else if (configSel == 5) {
                     state = STATE_MENU;
                 }
             }
             if (btn == BTN_LEFT) state = STATE_MENU;
 
-            char l0[22], l1[22], l2[22];
+            char l0[22], l1[22], l2[22], l3[22], l4[22];
             snprintf(l0, sizeof(l0), "Swap Roles: %s", rolesSwapped ? "YES" : "NO");
             snprintf(l1, sizeof(l1), "Invert E1: %s", enc1.invert ? "YES" : "NO");
             snprintf(l2, sizeof(l2), "Invert E2: %s", enc2.invert ? "YES" : "NO");
-            const char* cfgItems[] = { l0, l1, l2, "Back" };
-            displayMenu("Config", cfgItems, 4, configSel);
+            snprintf(l3, sizeof(l3), "Reset MT E1");
+            snprintf(l4, sizeof(l4), "Reset MT E2");
+            const char* cfgItems[] = { l0, l1, l2, l3, l4, "Back" };
+            displayMenu("Config", cfgItems, cfgCount, configSel);
+
+            if (configStatus[0] && millis() < configStatusUntil) {
+                u8g2.setDrawColor(0);
+                u8g2.drawBox(0, 54, 128, 10);
+                u8g2.setDrawColor(1);
+                u8g2.drawStr(2, 63, configStatus);
+                u8g2.sendBuffer();
+            }
             break;
         }
 

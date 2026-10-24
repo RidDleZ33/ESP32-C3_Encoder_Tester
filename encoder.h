@@ -7,6 +7,7 @@ struct EncoderData {
     uint8_t nodeId = 0;
     uint32_t rawPosition = 0;      // full multiturn absolute from TPDO
     uint32_t singleTurn = 0;       // single-turn portion (lower bits / mod resolution)
+    uint32_t turns = 0;            // multiturn count (upper bits / pos / resolution)
     float angleDegrees = 0.0f;
     uint32_t lastFrameMs = 0;
     uint32_t connectedAtMs = 0;
