@@ -26,7 +26,7 @@ void displaySplash() {
 void displayMain() {
     u8g2.clearBuffer();
     u8g2.setFont(u8g2_font_6x10_tf);
-    u8g2.drawStr(0, 10, "AMARC Tester");
+    u8g2.drawStr(0, 10, "AMARC Encoder Tester");
     u8g2.drawHLine(0, 12, 128);
 
     char buf[22];
