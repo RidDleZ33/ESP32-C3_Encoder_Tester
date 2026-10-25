@@ -5,9 +5,9 @@
 
 struct EncoderData {
     uint8_t nodeId = 0;
-    uint32_t rawPosition = 0;      // full multiturn absolute from TPDO
-    uint32_t singleTurn = 0;       // single-turn portion (lower bits / mod resolution)
-    uint32_t turns = 0;            // multiturn count (upper bits / pos / resolution)
+    uint32_t rawPosition = 0;
+    uint32_t singleTurn = 0;
+    uint32_t turns = 0;
     float angleDegrees = 0.0f;
     uint32_t lastFrameMs = 0;
     uint32_t connectedAtMs = 0;
@@ -15,13 +15,15 @@ struct EncoderData {
     bool configured = false;
     bool invert = false;
 
-    // Info cache
     char deviceName[32] = {0};
     uint32_t deviceType = 0;
     uint32_t vendorId = 0;
     uint32_t productCode = 0;
     uint32_t serial = 0;
-    uint32_t resolution = 0;       // steps per revolution (0x6001 or 0x6501)
+    uint32_t resolution = 0;
+    uint32_t operatingParams = 0;
+    uint32_t unitsPerRev = 0;
+    uint32_t totalRange = 0;
     uint8_t errorReg = 0;
     bool infoLoaded = false;
 };
