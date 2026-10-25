@@ -37,7 +37,12 @@ void encoderLoadInfo(EncoderData& enc) {
     if (canbusSendSdoRead(enc.nodeId, 0x1018, 0x01, val, sz)) enc.vendorId = val;
     if (canbusSendSdoRead(enc.nodeId, 0x1018, 0x02, val, sz)) enc.productCode = val;
     if (canbusSendSdoRead(enc.nodeId, 0x1018, 0x04, val, sz)) enc.serial = val;
-    if (canbusSendSdoRead(enc.nodeId, 0x6001, 0x00, val, sz)) enc.resolution = val;
+    if (canbusSendSdoRead(enc.nodeId, 0x6000, 0x00, val, sz)) enc.operatingParams = val;
+    if (canbusSendSdoRead(enc.nodeId, 0x6001, 0x00, val, sz)) {
+        enc.unitsPerRev = val;
+        enc.resolution = val;
+    }
+    if (canbusSendSdoRead(enc.nodeId, 0x6002, 0x00, val, sz)) enc.totalRange = val;
     if (canbusSendSdoRead(enc.nodeId, 0x6501, 0x00, val, sz) && val > 0 && val <= 65536) {
         enc.resolution = val;
     }
