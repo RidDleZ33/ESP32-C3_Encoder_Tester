@@ -4,7 +4,6 @@
 #include <Wire.h>
 #include <stdio.h>
 
-// Full framebuffer — draw off-screen, then send once. No flicker.
 U8G2_SSD1306_128X64_NONAME_F_HW_I2C u8g2(U8G2_R0, U8X8_PIN_NONE);
 
 void displayInit() {
@@ -73,7 +72,7 @@ void displayMenu(const char* title, const char* items[], int count, int selected
 }
 
 void displayInfo(int scroll) {
-    const int MAX_LINES = 16;
+    const int MAX_LINES = 20;
     char lines[MAX_LINES][22];
     int n = 0;
 
@@ -90,7 +89,11 @@ void displayInfo(int scroll) {
         add("--- E1 ---");
         snprintf(buf, sizeof(buf), "Node: %d", enc1.nodeId);
         add(buf);
-        snprintf(buf, sizeof(buf), "Type: %08lX", enc1.deviceType);
+        snprintf(buf, sizeof(buf), "Scale: %s", (enc1.operatingParams & 0x04) ? "ON" : "OFF");
+        add(buf);
+        snprintf(buf, sizeof(buf), "Units/r:%lu", enc1.unitsPerRev);
+        add(buf);
+        snprintf(buf, sizeof(buf), "TotRng:%lu", enc1.totalRange);
         add(buf);
         snprintf(buf, sizeof(buf), "Res:  %lu", enc1.resolution);
         add(buf);
@@ -106,7 +109,11 @@ void displayInfo(int scroll) {
         add("--- E2 ---");
         snprintf(buf, sizeof(buf), "Node: %d", enc2.nodeId);
         add(buf);
-        snprintf(buf, sizeof(buf), "Type: %08lX", enc2.deviceType);
+        snprintf(buf, sizeof(buf), "Scale: %s", (enc2.operatingParams & 0x04) ? "ON" : "OFF");
+        add(buf);
+        snprintf(buf, sizeof(buf), "Units/r:%lu", enc2.unitsPerRev);
+        add(buf);
+        snprintf(buf, sizeof(buf), "TotRng:%lu", enc2.totalRange);
         add(buf);
         snprintf(buf, sizeof(buf), "Res:  %lu", enc2.resolution);
         add(buf);
